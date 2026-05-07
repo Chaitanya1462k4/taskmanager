@@ -2,6 +2,9 @@
 
 A full-stack web app for project and task management with role-based access control.
 
+## Live Demo
+🔗 https://web-production-531cb.up.railway.app
+
 ## Features
 
 - **Authentication** — Signup, login, JWT via secure cookie
@@ -27,7 +30,7 @@ A full-stack web app for project and task management with role-based access cont
 
 ### 1. Clone and enter the project
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Chaitanya1462k4/taskmanager.git
 cd taskmanager
 ```
 
