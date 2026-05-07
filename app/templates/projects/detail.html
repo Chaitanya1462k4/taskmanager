@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}{{ project.title }} — TaskFlow{% endblock %}
+{% block page_title %}{{ project.title }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/tasks/new?project_id={{ project.id }}" class="btn btn-primary btn-sm">
+  <i class="bi bi-plus-lg"></i> Add Task
+</a>
+{% if can_manage %}
+<a href="/projects/{{ project.id }}/edit" class="btn btn-outline-secondary btn-sm">Edit</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if project.description %}
+<p class="text-muted mb-4">{{ project.description }}</p>
+{% endif %}
+
+<div class="row g-3">
+  <!-- Tasks column -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-body">
+        <h6 class="fw-semibold mb-3">Tasks <span class="badge bg-secondary ms-1">{{ tasks | length }}</span></h6>
+
+        {% if tasks %}
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr class="text-muted small">
+                <th>Title</th>
+                <th>Assignee</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Due</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for task in tasks %}
+              <tr class="task-row" onclick="location.href='/tasks/{{ task.id }}'" style="cursor:pointer">
+                <td class="py-2 small fw-medium">{{ task.title }}</td>
+                <td class="py-2 small text-muted">{{ task.assignee.name if task.assignee else '—' }}</td>
+                <td class="py-2">
+                  <span class="badge badge-{{ task.priority.value }} rounded-pill small">{{ task.priority.value.title() }}</span>
+                </td>
+                <td class="py-2">
+                  <span class="badge badge-{{ task.status.value }} rounded-pill small">
+                    {{ task.status.value.replace('_',' ').title() }}
+                  </span>
+                </td>
+                <td class="py-2 small text-muted">
+                  {{ task.due_date.strftime('%b %d') if task.due_date else '—' }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted small">
+          No tasks yet. <a href="/tasks/new?project_id={{ project.id }}">Add the first task</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Members column -->
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="fw-semibold mb-3">Team Members</h6>
+        {% for membership in members %}
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <div class="d-flex align-items-center gap-2">
+            <div style="width:28px;height:28px;border-radius:50%;background:#6366f1;color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:600">
+              {{ membership.user.name[0].upper() }}
+            </div>
+            <div>
+              <div class="small fw-medium">{{ membership.user.name }}</div>
+              <div style="font-size:0.7rem;color:#6c757d">{{ membership.role.value }}</div>
+            </div>
+          </div>
+          {% if can_manage and membership.user_id != user.id %}
+          <form method="post" action="/projects/{{ project.id }}/members/{{ membership.id }}/remove">
+            <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Remove">
+              <i class="bi bi-x"></i>
+            </button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+
+        {% if can_manage and non_members %}
+        <hr class="my-2">
+        <form method="post" action="/projects/{{ project.id }}/members/add" class="d-flex gap-1">
+          <select name="user_id" class="form-select form-select-sm">
+            {% for u in non_members %}
+            <option value="{{ u.id }}">{{ u.name }}</option>
+            {% endfor %}
+          </select>
+          <select name="role" class="form-select form-select-sm" style="width:auto">
+            <option value="member">Member</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button type="submit" class="btn btn-sm btn-primary text-nowrap">Add</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Quick stats -->
+    <div class="card">
+      <div class="card-body">
+        <h6 class="fw-semibold mb-3">Progress</h6>
+        {% set total = tasks | length %}
+        {% set done = tasks | selectattr('status.value', 'equalto', 'done') | list | length %}
+        {% if total > 0 %}
+        {% set progress_width = ((done / total) * 100)|int %}
+        <div class="progress mb-2" style="height:6px;border-radius:6px">
+          <div class="progress-bar bg-success" data-width="{{ progress_width }}" style="width: 0%;"></div>
+        </div>
+        <script>
+          document.querySelector('[data-width]').style.width = document.querySelector('[data-width]').dataset.width + '%';
+        </script>
+        <div class="small text-muted">{{ done }} / {{ total }} tasks complete</div>
+        {% else %}
+        <div class="small text-muted">No tasks yet</div>
+        {% endif %}
+        <div class="d-flex flex-wrap gap-2 mt-2">
+          {% for s in ['todo','in_progress','done','overdue'] %}
+          {% set count = tasks | selectattr('status.value', 'equalto', s) | list | length %}
+          {% if count > 0 %}
+          <span class="badge badge-{{ s }}">{{ s.replace('_',' ').title() }}: {{ count }}</span>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}{{ task.title }} — TaskFlow{% endblock %}
+{% block page_title %}Task Detail{% endblock %}
+
+{% block topbar_actions %}
+<a href="/projects/{{ task.project_id }}" class="btn btn-outline-secondary btn-sm">
+  <i class="bi bi-arrow-left"></i> Back to Project
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+          <div>
+            <h5 class="fw-semibold mb-1">{{ task.title }}</h5>
+            <div class="d-flex gap-2">
+              <span class="badge badge-{{ task.status.value }} rounded-pill">
+                {{ task.status.value.replace('_',' ').title() }}
+              </span>
+              <span class="badge badge-{{ task.priority.value }} rounded-pill">
+                {{ task.priority.value.title() }} Priority
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {% if task.description %}
+        <p class="text-muted">{{ task.description }}</p>
+        {% else %}
+        <p class="text-muted fst-italic small">No description provided.</p>
+        {% endif %}
+
+        <!-- Quick status update -->
+        <div class="border rounded p-3 mt-3" style="background:#f8f9fc">
+          <div class="small fw-semibold mb-2">Update Status</div>
+          <form method="post" action="/tasks/{{ task.id }}/status" class="d-flex gap-2 flex-wrap">
+            {% for s in statuses %}
+            <button type="submit" name="status" value="{{ s }}"
+              class="btn btn-sm {% if task.status.value == s %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+              {{ s.replace('_',' ').title() }}
+            </button>
+            {% endfor %}
+          </form>
+        </div>
+      </div>
+    </div>
+
+    {% if can_edit %}
+    <!-- Edit form -->
+    <div class="card mt-3">
+      <div class="card-body">
+        <h6 class="fw-semibold mb-3">Edit Task</h6>
+        <form method="post" action="/tasks/{{ task.id }}/edit">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Title</label>
+            <input type="text" name="title" class="form-control" value="{{ task.title }}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Description</label>
+            <textarea name="description" class="form-control" rows="3">{{ task.description or '' }}</textarea>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Assign To</label>
+              <select name="assigned_to" class="form-select">
+                <option value="">Unassigned</option>
+                {% for u in all_users %}
+                <option value="{{ u.id }}" {% if task.assigned_to == u.id %}selected{% endif %}>{{ u.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Priority</label>
+              <select name="priority" class="form-select">
+                {% for p in priorities %}
+                <option value="{{ p }}" {% if task.priority.value == p %}selected{% endif %}>{{ p.title() }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Due Date</label>
+            <input type="datetime-local" name="due_date" class="form-control"
+              value="{{ task.due_date.strftime('%Y-%m-%dT%H:%M') if task.due_date else '' }}">
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Sidebar info -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-body">
+        <h6 class="fw-semibold mb-3">Details</h6>
+        <dl class="row small mb-0">
+          <dt class="col-5 text-muted">Project</dt>
+          <dd class="col-7">
+            <a href="/projects/{{ task.project_id }}" class="text-decoration-none">{{ task.project.title }}</a>
+          </dd>
+          <dt class="col-5 text-muted">Assigned to</dt>
+          <dd class="col-7">{{ task.assignee.name if task.assignee else '—' }}</dd>
+          <dt class="col-5 text-muted">Created by</dt>
+          <dd class="col-7">{{ task.creator.name }}</dd>
+          <dt class="col-5 text-muted">Due date</dt>
+          <dd class="col-7 {% if task.status.value == 'overdue' %}text-danger fw-semibold{% endif %}">
+            {{ task.due_date.strftime('%b %d, %Y') if task.due_date else '—' }}
+          </dd>
+          <dt class="col-5 text-muted">Created</dt>
+          <dd class="col-7">{{ task.created_at.strftime('%b %d, %Y') }}</dd>
+        </dl>
+      </div>
+    </div>
+
+    {% if can_edit %}
+    <div class="mt-3">
+      <form method="post" action="/tasks/{{ task.id }}/delete"
+        onsubmit="return confirm('Delete this task? This cannot be undone.')">
+        <button class="btn btn-outline-danger btn-sm w-100">
+          <i class="bi bi-trash"></i> Delete Task
+        </button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}New Project — TaskFlow{% endblock %}
+{% block page_title %}New Project{% endblock %}
+
+{% block content %}
+<div style="max-width:560px">
+  <div class="card">
+    <div class="card-body">
+      {% if error %}
+      <div class="alert alert-danger py-2 small">{{ error }}</div>
+      {% endif %}
+      <form method="post" action="/projects/new">
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Project Title *</label>
+          <input type="text" name="title" class="form-control" placeholder="e.g. Website Redesign" required>
+        </div>
+        <div class="mb-4">
+          <label class="form-label small fw-semibold">Description</label>
+          <textarea name="description" class="form-control" rows="3" placeholder="Optional description…"></textarea>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary">Create Project</button>
+          <a href="/projects/" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

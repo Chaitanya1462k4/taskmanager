@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Tasks — TaskFlow{% endblock %}
+{% block page_title %}Tasks{% endblock %}
+
+{% block topbar_actions %}
+<a href="/tasks/new" class="btn btn-primary btn-sm">
+  <i class="bi bi-plus-lg"></i> New Task
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <form method="get" action="/tasks/" class="d-flex flex-wrap gap-2 align-items-center" onsubmit="var fields=['status','priority','project_id'];for(var i=0;i<fields.length;i++){var el=this.elements[fields[i]];if(el&&el.value==='')el.disabled=true;}">
+      <select name="status" class="form-select form-select-sm" style="width:auto">
+        <option value="">All Statuses</option>
+        {% for s in statuses %}
+        <option value="{{ s }}" {% if filter_status == s %}selected{% endif %}>{{ s.replace('_',' ').title() }}</option>
+        {% endfor %}
+      </select>
+      <select name="priority" class="form-select form-select-sm" style="width:auto">
+        <option value="">All Priorities</option>
+        {% for p in priorities %}
+        <option value="{{ p }}" {% if filter_priority == p %}selected{% endif %}>{{ p.title() }}</option>
+        {% endfor %}
+      </select>
+      <select name="project_id" class="form-select form-select-sm" style="width:auto">
+        <option value="">All Projects</option>
+        {% for p in projects %}
+        <option value="{{ p.id }}" {% if filter_project == p.id %}selected{% endif %}>{{ p.title }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-sm btn-outline-secondary">Filter</button>
+      {% if filter_status or filter_priority or filter_project %}
+      <a href="/tasks/" class="btn btn-sm btn-link text-muted">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+{% if tasks %}
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr class="text-muted small" style="background:#f8f9fc">
+          <th class="ps-3 py-2">Task</th>
+          <th>Project</th>
+          <th>Assignee</th>
+          <th>Priority</th>
+          <th>Status</th>
+          <th>Due</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for task in tasks %}
+        <tr class="task-row" onclick="location.href='/tasks/{{ task.id }}'" style="cursor:pointer">
+          <td class="ps-3 py-2 small fw-medium">{{ task.title }}</td>
+          <td class="py-2 small text-muted">
+            <a href="/projects/{{ task.project_id }}" class="text-muted text-decoration-none" onclick="event.stopPropagation()">
+              {{ task.project.title }}
+            </a>
+          </td>
+          <td class="py-2 small text-muted">{{ task.assignee.name if task.assignee else '—' }}</td>
+          <td class="py-2">
+            <span class="badge badge-{{ task.priority.value }} rounded-pill small">{{ task.priority.value.title() }}</span>
+          </td>
+          <td class="py-2">
+            <span class="badge badge-{{ task.status.value }} rounded-pill small">
+              {{ task.status.value.replace('_',' ').title() }}
+            </span>
+          </td>
+          <td class="py-2 small {% if task.status.value == 'overdue' %}text-danger fw-semibold{% else %}text-muted{% endif %}">
+            {{ task.due_date.strftime('%b %d, %Y') if task.due_date else '—' }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="text-center py-5">
+  <i class="bi bi-check2-square display-4 text-muted opacity-25"></i>
+  <h5 class="mt-3 text-muted">No tasks found</h5>
+  <a href="/tasks/new" class="btn btn-primary mt-2">Create Task</a>
+</div>
+{% endif %}
+{% endblock %}

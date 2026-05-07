@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — TaskFlow{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block topbar_actions %}
+<a href="/projects/new" class="btn btn-primary btn-sm">
+  <i class="bi bi-plus-lg"></i> New Project
+</a>
+<a href="/tasks/new" class="btn btn-outline-secondary btn-sm">
+  <i class="bi bi-plus-lg"></i> New Task
+</a>
+{% endblock %}
+
+{% block content %}
+<p class="text-muted mb-4">Good to see you, <strong>{{ user.name }}</strong> 👋</p>
+
+<!-- Stats row -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="value text-primary">{{ stats.total_projects }}</div>
+      <div class="label">Projects</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="value" style="color:#f59e0b">{{ stats.in_progress }}</div>
+      <div class="label">In Progress</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="value text-success">{{ stats.done }}</div>
+      <div class="label">Completed</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="value text-danger">{{ stats.overdue }}</div>
+      <div class="label">Overdue</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Recent Tasks -->
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="mb-0 fw-semibold">Recent Tasks</h6>
+          <a href="/tasks/" class="small text-muted">View all</a>
+        </div>
+        {% if recent_tasks %}
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr class="text-muted small">
+                <th>Task</th>
+                <th>Project</th>
+                <th>Status</th>
+                <th>Priority</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for task in recent_tasks %}
+              <tr class="task-row" onclick="location.href='/tasks/{{ task.id }}'" style="cursor:pointer">
+                <td class="py-2">
+                  <div class="fw-medium small">{{ task.title }}</div>
+                  {% if task.assignee %}
+                  <div class="text-muted" style="font-size:0.75rem">{{ task.assignee.name }}</div>
+                  {% endif %}
+                </td>
+                <td class="py-2 small text-muted">{{ task.project.title }}</td>
+                <td class="py-2">
+                  <span class="badge badge-{{ task.status.value }} rounded-pill small">
+                    {{ task.status.value.replace('_', ' ').title() }}
+                  </span>
+                </td>
+                <td class="py-2">
+                  <span class="badge badge-{{ task.priority.value }} rounded-pill small">
+                    {{ task.priority.value.title() }}
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted small">
+          <i class="bi bi-check2-square fs-3 d-block mb-2 opacity-25"></i>
+          No tasks yet. <a href="/tasks/new">Create one</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Projects panel -->
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="mb-0 fw-semibold">Projects</h6>
+          <a href="/projects/" class="small text-muted">View all</a>
+        </div>
+        {% if projects %}
+        {% for project in projects %}
+        <a href="/projects/{{ project.id }}" class="d-block text-decoration-none mb-2 p-2 rounded" style="background:#f8f9fc;transition:background 0.15s" onmouseover="this.style.background='#eef2ff'" onmouseout="this.style.background='#f8f9fc'">
+          <div class="small fw-medium text-dark">{{ project.title }}</div>
+          <div class="text-muted" style="font-size:0.75rem">{{ project.tasks | length }} tasks</div>
+        </a>
+        {% endfor %}
+        {% else %}
+        <div class="text-center py-4 text-muted small">
+          <i class="bi bi-folder2 fs-3 d-block mb-2 opacity-25"></i>
+          No projects. <a href="/projects/new">Create one</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Task breakdown -->
+    <div class="card mt-3">
+      <div class="card-body">
+        <h6 class="mb-3 fw-semibold">Task Breakdown</h6>
+        {% set total = stats.todo + stats.in_progress + stats.done + stats.overdue %}
+        {% if total > 0 %}
+        <div class="progress mb-2" style="height:8px;border-radius:8px">
+          <div class="progress-bar bg-success" data-width="{{ (stats.done / total * 100)|int }}" style="width:0%"></div>
+          <div class="progress-bar" data-width="{{ (stats.in_progress / total * 100)|int }}" style="background:#f59e0b;width:0%"></div>
+          <div class="progress-bar bg-danger" data-width="{{ (stats.overdue / total * 100)|int }}" style="width:0%"></div>
+          <div class="progress-bar bg-secondary" data-width="{{ (stats.todo / total * 100)|int }}" style="width:0%"></div>
+        </div>
+        <script>
+          document.querySelectorAll('.progress-bar[data-width]').forEach(el => {
+            el.style.width = el.dataset.width + '%';
+          });
+        </script>
+        {% endif %}
+        <div class="d-flex flex-wrap gap-2 mt-2">
+          <span class="badge badge-todo">Todo: {{ stats.todo }}</span>
+          <span class="badge badge-in_progress">Active: {{ stats.in_progress }}</span>
+          <span class="badge badge-done">Done: {{ stats.done }}</span>
+          <span class="badge badge-overdue">Overdue: {{ stats.overdue }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
